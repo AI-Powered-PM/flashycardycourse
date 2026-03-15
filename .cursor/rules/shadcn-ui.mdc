@@ -1,0 +1,19 @@
+---
+alwaysApply: true
+---
+# Shadcn UI
+
+- Use `shadcn/ui` for all UI elements in this project.
+- If `shadcn/ui` is not initialized, run:
+
+```shell
+npx shadcn@latest init -t next
+```
+
+- If a required component is missing, install it with:
+
+```shell
+npx shadcn@latest add button
+```
+
+- Replace `button` with the specific component name that is needed.
