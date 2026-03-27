@@ -1,0 +1,35 @@
+---
+alwaysApply: true
+---
+# Drizzle-only database access
+
+All database reads and writes must go through **Drizzle ORM** using this project’s schema and the shared client. Do not bypass them with ad-hoc SQL drivers or alternate clients in application code.
+
+## Required patterns
+
+- **Schema**: Define and export tables, columns, and relations in `src/db/schema.ts`. Keep `drizzle.config.ts` pointing at that file for migrations.
+- **Client**: Use the `db` instance from `src/db` (Drizzle + Neon HTTP with schema registered). Import it where you run queries (e.g. server code, Server Actions, route handlers).
+- **Queries**: Use Drizzle’s query builder (`db.select()`, `db.insert()`, `db.update()`, `db.delete()`, `db.query.*` with relations, etc.) and the table/column objects from `schema.ts`.
+- **Migrations**: After schema changes, use Drizzle Kit (`drizzle-kit generate` / project scripts) so the `drizzle/` folder stays the source of truth for SQL migrations.
+
+## Examples
+
+```typescript
+// ❌ BAD — raw SQL or a second DB client in app code
+import { neon } from "@neondatabase/serverless";
+const sql = neon(process.env.DATABASE_URL!);
+await sql`SELECT * FROM decks`;
+
+// ✅ GOOD — Drizzle + schema + shared db
+import { db } from "@/src/db";
+import { decksTable } from "@/src/db/schema";
+import { eq } from "drizzle-orm";
+
+await db.select().from(decksTable).where(eq(decksTable.userId, userId));
+```
+
+This repo maps `@/*` to the project root (`tsconfig.json`), so prefer `@/src/db` and `@/src/db/schema`.
+
+## Exceptions
+
+The low-level Neon client may exist only inside `src/db` (or similar) to construct the Drizzle client—do not duplicate that wiring elsewhere for feature queries.
