@@ -1,11 +1,11 @@
 import { auth } from "@clerk/nextjs/server";
-import { Plus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { Button } from "@/components/ui/button";
 import { getDecksForUser } from "@/src/db/queries";
+
+import { CreateDeckDialog } from "./create-deck-dialog";
 
 export const metadata: Metadata = {
   title: "Dashboard | FlashyCardy",
@@ -63,12 +63,7 @@ export default async function DashboardPage() {
           </ul>
         )}
 
-        <div className="flex justify-end">
-          <Button type="button" variant="outline" size="lg" className="gap-2">
-            <Plus className="size-4" aria-hidden />
-            Create New Deck
-          </Button>
-        </div>
+        <CreateDeckDialog />
       </div>
     </div>
   );

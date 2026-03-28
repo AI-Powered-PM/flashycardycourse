@@ -20,6 +20,22 @@ export async function getDeckByIdForUser(userId: string, deckId: number) {
   return deck ?? undefined;
 }
 
+export async function createDeckForUser(
+  userId: string,
+  data: { title: string; description?: string | null },
+) {
+  const [created] = await db
+    .insert(decksTable)
+    .values({
+      userId,
+      title: data.title,
+      description: data.description ?? null,
+    })
+    .returning();
+
+  return created;
+}
+
 export async function updateDeckForUser(
   userId: string,
   deckId: number,

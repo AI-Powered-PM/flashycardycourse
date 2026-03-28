@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, BookOpen, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -85,7 +85,25 @@ export function DeckHeader({ deck, cardCount }: DeckHeaderProps) {
             )}
           </div>
 
-          <DropdownMenu>
+          <div className="flex shrink-0 items-center gap-2">
+            {cardCount > 0 ? (
+              <Button render={<Link href={`/decks/${deck.id}/study`} />} nativeButton={false} size="default" className="gap-2">
+                <BookOpen className="size-4" aria-hidden />
+                Start study
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                disabled
+                size="default"
+                className="gap-2"
+                title="Add at least one card to start studying"
+              >
+                <BookOpen className="size-4" aria-hidden />
+                Start study
+              </Button>
+            )}
+            <DropdownMenu>
             <DropdownMenuTrigger
               render={<Button variant="ghost" size="icon" />}
             >
@@ -113,6 +131,7 @@ export function DeckHeader({ deck, cardCount }: DeckHeaderProps) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          </div>
         </div>
       </div>
 
