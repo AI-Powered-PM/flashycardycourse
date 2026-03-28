@@ -13,47 +13,37 @@ All authentication is handled by **Clerk**. Every data query must be scoped to t
 - Use `useAuth()` or `useUser()` from `@clerk/nextjs` only in Client Components.
 - **Always** filter queries by `userId`. Never expose an endpoint or action that returns unscoped data.
 - For child resources (e.g. cards), join through the parent (deck) to verify ownership — do not trust a raw `deckId` from the client.
+- Call **`src/db/queries`** helpers with `userId` from `auth()` at the Server Component / Server Action boundary; implement the actual `db` + `userId` filters inside those helpers (see drizzle-database rule).
 
 ## Examples
 
 ```typescript
 // ❌ BAD — no ownership check
 export async function getDeck(deckId: number) {
-  return db.select().from(decksTable).where(eq(decksTable.id, deckId));
+  return getDeckByIdUnscoped(deckId);
 }
 
-// ✅ GOOD — scoped to the authenticated user
+// ✅ GOOD — scoped to the authenticated user via query helpers
 import { auth } from "@clerk/nextjs/server";
 
-export async function getDeck(deckId: number) {
+import { getDeckByIdForUser } from "@/src/db/queries";
+
+export async function loadDeckPage(deckId: number) {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
-  return db
-    .select()
-    .from(decksTable)
-    .where(and(eq(decksTable.id, deckId), eq(decksTable.userId, userId)));
+  return getDeckByIdForUser(userId, deckId);
 }
 ```
 
 ```typescript
 // ❌ BAD — trusts client-supplied deckId without ownership check
 export async function getCards(deckId: number) {
-  return db.select().from(cardsTable).where(eq(cardsTable.deckId, deckId));
+  return selectCardsByDeckId(deckId);
 }
 
-// ✅ GOOD — verifies the deck belongs to the user first
-export async function getCards(deckId: number) {
-  const { userId } = await auth();
-  if (!userId) throw new Error("Unauthorized");
-
-  const [deck] = await db
-    .select()
-    .from(decksTable)
-    .where(and(eq(decksTable.id, deckId), eq(decksTable.userId, userId)));
-
-  if (!deck) throw new Error("Not found");
-
-  return db.select().from(cardsTable).where(eq(cardsTable.deckId, deckId));
+// ✅ GOOD — verifies the deck belongs to the user first (inside queries)
+export async function getCardsForUserDeck(userId: string, deckId: number) {
+  return getCardsByDeckIdForUser(userId, deckId); // query helper checks deck ownership, then loads cards
 }
 ```

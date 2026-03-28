@@ -25,17 +25,20 @@ alwaysApply: true
 - **Do not** type Server Action parameters as `FormData` and branch on string keys. Build a typed object (from controlled fields or from `FormData` fields **inside** the action after `"use server"`), validate it with Zod, then use the inferred type.
 
 ```typescript
-// ❌ BAD — FormData as the public contract, no Zod, weak typing
+// ❌ BAD — FormData as the public contract, no Zod, inline db in the action
 "use server";
 export async function updateDeck(formData: FormData) {
   const name = formData.get("name") as string;
   await db.update(decksTable).set({ name });
 }
 
-// ✅ GOOD — typed payload + Zod, then mutate ("use server" at top of the module)
+// ✅ GOOD — typed payload + Zod, then call a query helper ("use server" at top of the module)
 "use server";
 
+import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
+
+import { updateDeckTitleForUser } from "@/src/db/queries";
 
 const updateDeckSchema = z.object({
   deckId: z.number().int().positive(),
@@ -46,7 +49,10 @@ export type UpdateDeckInput = z.infer<typeof updateDeckSchema>;
 
 export async function updateDeck(input: UpdateDeckInput) {
   const parsed = updateDeckSchema.parse(input);
-  // ... db.update with ownership check (see clerk-auth rule)
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  await updateDeckTitleForUser(userId, parsed.deckId, parsed.name);
 }
 ```
 
