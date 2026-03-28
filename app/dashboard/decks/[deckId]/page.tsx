@@ -2,7 +2,10 @@ import { auth } from "@clerk/nextjs/server";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
-import { getDeckByIdForUser } from "@/src/db/queries";
+import { getCardsForUserDeck, getDeckByIdForUser } from "@/src/db/queries";
+
+import { CardList } from "./card-list";
+import { DeckHeader } from "./deck-header";
 
 type Props = {
   params: Promise<{ deckId: string }>;
@@ -36,13 +39,15 @@ export default async function DeckPage({ params }: Props) {
   if (!Number.isFinite(id) || id <= 0) notFound();
 
   const deck = await getDeckByIdForUser(userId, id);
-
   if (!deck) notFound();
+
+  const cards = await getCardsForUserDeck(userId, id);
 
   return (
     <div className="min-h-screen bg-background px-6 py-8">
       <div className="mx-auto w-full max-w-3xl">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{deck.title}</h1>
+        <DeckHeader deck={deck} cardCount={cards.length} />
+        <CardList deckId={deck.id} cards={cards} />
       </div>
     </div>
   );

@@ -19,3 +19,23 @@ export async function getDeckByIdForUser(userId: string, deckId: number) {
 
   return deck ?? undefined;
 }
+
+export async function updateDeckForUser(
+  userId: string,
+  deckId: number,
+  data: { title?: string; description?: string | null },
+) {
+  const [updated] = await db
+    .update(decksTable)
+    .set({ ...data, updatedAt: new Date() })
+    .where(and(eq(decksTable.id, deckId), eq(decksTable.userId, userId)))
+    .returning();
+
+  return updated;
+}
+
+export async function deleteDeckForUser(userId: string, deckId: number) {
+  await db
+    .delete(decksTable)
+    .where(and(eq(decksTable.id, deckId), eq(decksTable.userId, userId)));
+}
