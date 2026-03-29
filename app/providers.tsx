@@ -1,7 +1,9 @@
 "use client";
 
-import { ClerkProvider, Show, UserButton } from "@clerk/nextjs";
+import { ClerkProvider, Show } from "@clerk/nextjs";
 import { dark } from "@clerk/ui/themes";
+
+import { AppHeader } from "@/components/app-header";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -11,9 +13,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       signUpFallbackRedirectUrl="/dashboard"
     >
       <Show when="signed-in">
-        <header className="flex items-center justify-end gap-4 p-4">
-          <UserButton />
-        </header>
+        <AppHeader />
       </Show>
       {children}
     </ClerkProvider>

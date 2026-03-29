@@ -88,7 +88,7 @@ export function DeckHeader({ deck, cardCount, canUseAiGeneration }: DeckHeaderPr
             )}
           </div>
 
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+          <div className="flex shrink-0 flex-wrap items-start justify-end gap-2">
             <GenerateAiCardsButton
               deckId={deck.id}
               canUseAi={canUseAiGeneration}

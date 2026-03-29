@@ -12,6 +12,7 @@ import {
   createCardsBulkForUserDeck,
   deleteCardForUser,
   deleteDeckForUser,
+  getCardsForUserDeck,
   getDeckByIdForUser,
   updateCardForUser,
   updateDeckForUser,
@@ -147,10 +148,23 @@ export async function generateDeckCardsWithAi(
   }
 
   try {
+    const existingCards = await getCardsForUserDeck(userId, parsed.deckId);
+    const existingPairs = existingCards.map((c) => ({ front: c.front, back: c.back }));
+
     const generated = await generateDeckFlashcardsWithAi(
       deck.title,
       deck.description,
+      existingPairs,
     );
+
+    if (generated.length === 0) {
+      return {
+        success: false,
+        error:
+          "No new cards were added. The model only suggested items that are already in this deck (or duplicates of them). Try editing the deck description to ask for a different angle, or add cards manually.",
+      };
+    }
+
     const count = await createCardsBulkForUserDeck(userId, parsed.deckId, generated);
     revalidatePath(`/dashboard/decks/${parsed.deckId}`);
     return { success: true, count };
