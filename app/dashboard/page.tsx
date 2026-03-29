@@ -21,6 +21,10 @@ function formatUpdatedAt(value: Date) {
   });
 }
 
+function formatCardCount(cardCount: number) {
+  return `${cardCount} ${cardCount === 1 ? "card" : "cards"}`;
+}
+
 export default async function DashboardPage() {
   const { userId, has } = await auth();
   if (!userId) redirect("/");
@@ -58,7 +62,7 @@ export default async function DashboardPage() {
                   </div>
                   <div className="mt-4 border-t border-border pt-3">
                     <p className="text-xs text-muted-foreground">
-                      Last updated: {formatUpdatedAt(deck.updatedAt)}
+                      {formatCardCount(deck.cardCount)} • Last updated: {formatUpdatedAt(deck.updatedAt)}
                     </p>
                   </div>
                 </Link>
