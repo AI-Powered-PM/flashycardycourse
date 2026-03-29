@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { getDecksForUser } from "@/src/db/queries";
 
+import { FREE_PLAN_DECK_LIMIT } from "./deck-limits";
 import { CreateDeckDialog } from "./create-deck-dialog";
 
 export const metadata: Metadata = {
@@ -21,10 +22,13 @@ function formatUpdatedAt(value: Date) {
 }
 
 export default async function DashboardPage() {
-  const { userId } = await auth();
+  const { userId, has } = await auth();
   if (!userId) redirect("/");
 
   const decks = await getDecksForUser(userId);
+  const hasUnlimitedDecks = has({ feature: "unlimited_decks" });
+  const canCreateDeck =
+    hasUnlimitedDecks || decks.length < FREE_PLAN_DECK_LIMIT;
 
   return (
     <div className="min-h-screen bg-background px-6 py-8">
@@ -63,7 +67,12 @@ export default async function DashboardPage() {
           </ul>
         )}
 
-        <CreateDeckDialog />
+        <CreateDeckDialog
+          canCreateDeck={canCreateDeck}
+          deckCount={decks.length}
+          hasUnlimitedDecks={hasUnlimitedDecks}
+          freePlanDeckLimit={FREE_PLAN_DECK_LIMIT}
+        />
       </div>
     </div>
   );
