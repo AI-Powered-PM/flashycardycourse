@@ -63,13 +63,16 @@ export default async function DashboardPage() {
                   </div>
                   <div className="mt-4 border-t border-border pt-3">
                     <p className="text-xs text-muted-foreground">
-                      <span className="inline-flex items-center gap-1.5">
-                        <CreditCard className="size-3.5" aria-hidden />
-                        <span>
-                          {deck.cardCount} {formatCardLabel(deck.cardCount)}
+                      <span className="inline-flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5">
+                          <CreditCard className="size-3.5" aria-hidden />
+                          <span>
+                            {deck.cardCount} {formatCardLabel(deck.cardCount)}
+                          </span>
                         </span>
-                      </span>{" "}
-                      • Last updated: {formatUpdatedAt(deck.updatedAt)}
+                        <span aria-hidden>•</span>
+                        <span>Last updated: {formatUpdatedAt(deck.updatedAt)}</span>
+                      </span>
                     </p>
                   </div>
                 </Link>
