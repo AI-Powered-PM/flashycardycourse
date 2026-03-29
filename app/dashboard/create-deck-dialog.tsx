@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { type FormEvent, useState, useTransition } from "react";
 
@@ -69,20 +69,69 @@ export function CreateDeckDialog({
     });
   }
 
+  const decksRemaining = freePlanDeckLimit - deckCount;
+  const usagePercent = Math.min(100, Math.round((deckCount / freePlanDeckLimit) * 100));
+
   return (
     <>
-      <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
+      <div className="flex flex-col items-stretch gap-4 lg:flex-row lg:items-stretch lg:justify-end lg:gap-6">
         {!hasUnlimitedDecks && canCreateDeck ? (
-          <p className="text-center text-sm text-muted-foreground sm:mr-auto sm:text-left">
-            {deckCount} of {freePlanDeckLimit} free decks used
-          </p>
+          <div className="rounded-xl border border-border bg-gradient-to-br from-primary/5 via-background to-background p-4 sm:p-5 lg:mr-auto lg:max-w-xl lg:flex-1">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0 flex-1 space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Free plan</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {deckCount} of {freePlanDeckLimit} decks used
+                    {deckCount > 0
+                      ? decksRemaining === 1
+                        ? " — one slot left before you hit the limit."
+                        : ` — ${decksRemaining} slots left.`
+                      : null}
+                  </p>
+                </div>
+                <div
+                  className="h-2 overflow-hidden rounded-full bg-muted"
+                  role="progressbar"
+                  aria-valuenow={deckCount}
+                  aria-valuemin={0}
+                  aria-valuemax={freePlanDeckLimit}
+                  aria-label={`${deckCount} of ${freePlanDeckLimit} free decks used`}
+                >
+                  <div
+                    className="h-full rounded-full bg-primary transition-[width] duration-300"
+                    style={{ width: `${usagePercent}%` }}
+                  />
+                </div>
+                <div className="flex gap-2 rounded-lg border border-border/60 bg-card/50 px-3 py-2.5">
+                  <Sparkles className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
+                  <div className="space-y-1 text-xs leading-relaxed text-muted-foreground">
+                    <p className="font-medium text-foreground">Go Pro when you&apos;re ready</p>
+                    <p>
+                      Unlimited decks for every subject, plus AI flashcard generation so you can build
+                      decks faster and study smarter.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <Link
+                href="/pricing"
+                className={cn(
+                  buttonVariants({ variant: "secondary", size: "default" }),
+                  "w-full shrink-0 sm:w-auto sm:self-start",
+                )}
+              >
+                Compare plans
+              </Link>
+            </div>
+          </div>
         ) : null}
         {canCreateDeck ? (
           <Button
             type="button"
             variant="outline"
             size="lg"
-            className="gap-2 self-end sm:self-center"
+            className="gap-2 self-end lg:self-center"
             onClick={() => handleOpenChange(true)}
           >
             <Plus className="size-4" aria-hidden />
