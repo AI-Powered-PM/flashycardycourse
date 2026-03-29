@@ -1,0 +1,76 @@
+---
+description: Clerk Billing — plans, features, pricing, and access control
+alwaysApply: true
+---
+
+# Clerk Billing (B2C)
+
+Subscriptions and payments use **Clerk Billing** (B2C). Billing is in beta; prefer [pinning](https://clerk.com/docs/pinning.md) Clerk SDK and `clerk-js` versions. Plans and prices live in the Clerk Dashboard (not Stripe Billing products).
+
+## Plans and features (this app)
+
+Use these **exact** identifiers in code and Dashboard:
+
+| Plans | Features |
+|-------|----------|
+| `free_user` | `3_deck_limit` |
+| `pro` | `unlimited_decks`, `ai_flashcard_generation` |
+
+Map product behavior to **features** when possible (e.g. deck limits, AI generation). Use **plans** when whole-route or whole-page access should match a tier.
+
+## Pricing UI
+
+- Prefer a dedicated route (e.g. `app/pricing/page.tsx`) with `<PricingTable />` from `@clerk/nextjs`.
+- Use the Clerk **development gateway** for dev; a **separate** Stripe account for production (per Clerk Billing docs).
+
+## Gating UI
+
+- **Server Components / Server Actions**: `const { has } = await auth()` from `@clerk/nextjs/server`, then `has({ plan: 'pro' })` or `has({ feature: 'unlimited_decks' })`.
+- **Client Components**: `<Show when={{ feature: 'ai_flashcard_generation' }} fallback={...}>...</Show>` from `@clerk/nextjs` (same shape for `plan`).
+
+## Security
+
+- **Never rely on UI-only checks** for paid behavior. Server Actions and any sensitive reads/writes must re-check entitlements with `has()` (or equivalent server-side checks) so limits cannot be bypassed.
+
+## Examples
+
+```tsx
+// Server — feature gate
+import { auth } from "@clerk/nextjs/server";
+
+export default async function Page() {
+  const { has } = await auth();
+  if (!has({ feature: "ai_flashcard_generation" })) {
+    return <p>Upgrade to use AI flashcard generation.</p>;
+  }
+  return <AiTool />;
+}
+```
+
+```tsx
+// Client — optional UI gate
+import { Show } from "@clerk/nextjs";
+
+export function ProBadge() {
+  return (
+    <Show when={{ plan: "pro" }} fallback={null}>
+      <span>Pro</span>
+    </Show>
+  );
+}
+```
+
+```tsx
+// Pricing page (pattern)
+import { PricingTable } from "@clerk/nextjs";
+
+export default function PricingPage() {
+  return (
+    <div className="mx-auto max-w-3xl px-4">
+      <PricingTable />
+    </div>
+  );
+}
+```
+
+For B2B/org billing, see Clerk’s B2B billing guide; this project’s entitlements above are **user** (B2C) plans and features.
