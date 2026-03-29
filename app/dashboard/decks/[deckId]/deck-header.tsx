@@ -2,7 +2,6 @@
 
 import { ArrowLeft, BookOpen, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 import { deleteDeck, updateDeck } from "./actions";
+import { GenerateAiCardsButton } from "./generate-ai-cards-button";
 
 type DeckHeaderProps = {
   deck: {
@@ -34,10 +34,10 @@ type DeckHeaderProps = {
     description: string | null;
   };
   cardCount: number;
+  canUseAiGeneration: boolean;
 };
 
-export function DeckHeader({ deck, cardCount }: DeckHeaderProps) {
-  const router = useRouter();
+export function DeckHeader({ deck, cardCount, canUseAiGeneration }: DeckHeaderProps) {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [title, setTitle] = useState(deck.title);
@@ -85,7 +85,8 @@ export function DeckHeader({ deck, cardCount }: DeckHeaderProps) {
             )}
           </div>
 
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+            <GenerateAiCardsButton deckId={deck.id} canUseAi={canUseAiGeneration} />
             {cardCount > 0 ? (
               <Button render={<Link href={`/decks/${deck.id}/study`} />} nativeButton={false} size="default" className="gap-2">
                 <BookOpen className="size-4" aria-hidden />

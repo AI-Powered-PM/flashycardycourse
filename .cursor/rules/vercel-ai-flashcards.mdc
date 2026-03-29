@@ -1,0 +1,50 @@
+---
+alwaysApply: true
+---
+# Vercel AI SDK (OpenAI) — flashcard generation
+
+AI features (especially **AI flashcard generation**) use the **[Vercel AI SDK](https://ai-sdk.dev/)** (`ai` npm package) to call OpenAI. Prefer **structured output** so the model returns JSON matching app types and the DB (`cardsTable`: `front`, `back`).
+
+## Where it runs
+
+- Call the SDK from **Server Actions** (or server-only helpers they call), not from the client.
+- Validate inputs with **Zod** at the server boundary (see project server-actions rule).
+- Re-check **Clerk** `has({ feature: "ai_flashcard_generation" })` in the action; do not rely on UI-only gating.
+
+## Structured flashcards (`generateText` + `Output.object`)
+
+Use `Output.object` with a Zod schema whose shape matches persisted cards: an array of `{ front, back }`. Constrain **count** in both the prompt and the schema (e.g. `.length(n)` or `.min(n).max(n)` when `n` is dynamic).
+
+```typescript
+import { generateText, Output } from "ai";
+import { z } from "zod";
+
+const cardCount = 10;
+
+const generatedFlashcardsSchema = z.object({
+  cards: z
+    .array(
+      z.object({
+        front: z.string().min(1),
+        back: z.string().min(1),
+      }),
+    )
+    .length(cardCount),
+});
+
+const { output } = await generateText({
+  model: "openai/gpt-5.3-chat",
+  output: Output.object({
+    schema: generatedFlashcardsSchema,
+  }),
+  prompt: `Generate exactly ${cardCount} flashcards on the following topic. Each card must have a clear question or prompt on the front and the answer on the back.\n\nTopic: ...`,
+});
+
+// `output` is typed from the schema; persist `output.cards` via existing deck/card query helpers.
+```
+
+## Practices
+
+- Keep schemas **exported** or shared if the same shape is validated in actions and tests.
+- Put **reasonable max** card counts in Zod and in business logic to control cost and abuse.
+- Handle model errors/timeouts; surface safe messages to the client without leaking raw provider errors.

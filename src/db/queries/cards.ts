@@ -42,6 +42,25 @@ export async function createCardForUserDeck(
   return card;
 }
 
+export async function createCardsBulkForUserDeck(
+  userId: string,
+  deckId: number,
+  cards: Array<{ front: string; back: string }>,
+) {
+  if (cards.length === 0) return 0;
+
+  const [deck] = await db
+    .select({ id: decksTable.id })
+    .from(decksTable)
+    .where(and(eq(decksTable.id, deckId), eq(decksTable.userId, userId)));
+
+  if (!deck) throw new Error("Deck not found");
+
+  await db.insert(cardsTable).values(cards.map((c) => ({ deckId, front: c.front, back: c.back })));
+
+  return cards.length;
+}
+
 export async function updateCardForUser(
   userId: string,
   cardId: number,

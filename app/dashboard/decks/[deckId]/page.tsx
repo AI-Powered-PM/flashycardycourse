@@ -31,8 +31,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function DeckPage({ params }: Props) {
-  const { userId } = await auth();
+  const { userId, has } = await auth();
   if (!userId) redirect("/");
+
+  const canUseAiGeneration =
+    has({ feature: "ai_flashcard_generation" }) || has({ plan: "pro" });
 
   const { deckId } = await params;
   const id = Number.parseInt(deckId, 10);
@@ -46,7 +49,11 @@ export default async function DeckPage({ params }: Props) {
   return (
     <div className="min-h-screen bg-background px-6 py-8">
       <div className="mx-auto w-full max-w-3xl">
-        <DeckHeader deck={deck} cardCount={cards.length} />
+        <DeckHeader
+          deck={deck}
+          cardCount={cards.length}
+          canUseAiGeneration={canUseAiGeneration}
+        />
         <CardList deckId={deck.id} cards={cards} />
       </div>
     </div>
