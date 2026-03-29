@@ -131,8 +131,26 @@ export async function generateDeckCardsWithAi(
     return { success: false, error: "Deck not found." };
   }
 
+  const titleTrimmed = deck.title.trim();
+  const descriptionTrimmed = deck.description?.trim() ?? "";
+  if (titleTrimmed.length === 0) {
+    return {
+      success: false,
+      error: "Add a deck title before generating cards with AI. Use the ⋯ menu and choose Edit Deck.",
+    };
+  }
+  if (descriptionTrimmed.length === 0) {
+    return {
+      success: false,
+      error: "Add a deck description first so AI knows what to generate. Use the ⋯ menu and choose Edit Deck.",
+    };
+  }
+
   try {
-    const generated = await generateDeckFlashcardsWithAi(deck.title, deck.description);
+    const generated = await generateDeckFlashcardsWithAi(
+      deck.title,
+      deck.description,
+    );
     const count = await createCardsBulkForUserDeck(userId, parsed.deckId, generated);
     revalidatePath(`/dashboard/decks/${parsed.deckId}`);
     return { success: true, count };

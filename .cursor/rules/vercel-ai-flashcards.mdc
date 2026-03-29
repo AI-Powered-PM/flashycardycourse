@@ -1,9 +1,9 @@
 ---
 alwaysApply: true
 ---
-# Vercel AI SDK (OpenAI) — flashcard generation
+# Vercel AI SDK (Anthropic) — flashcard generation
 
-AI features (especially **AI flashcard generation**) use the **[Vercel AI SDK](https://ai-sdk.dev/)** (`ai` npm package) to call OpenAI. Prefer **structured output** so the model returns JSON matching app types and the DB (`cardsTable`: `front`, `back`).
+AI features (especially **AI flashcard generation**) use the **[Vercel AI SDK](https://ai-sdk.dev/)** (`ai` npm package) with **`@ai-sdk/anthropic`** and `ANTHROPIC_API_KEY`. Prefer **structured output** so the model returns JSON matching app types and the DB (`cardsTable`: `front`, `back`).
 
 ## Where it runs
 
@@ -13,9 +13,10 @@ AI features (especially **AI flashcard generation**) use the **[Vercel AI SDK](h
 
 ## Structured flashcards (`generateText` + `Output.object`)
 
-Use `Output.object` with a Zod schema whose shape matches persisted cards: an array of `{ front, back }`. Constrain **count** in both the prompt and the schema (e.g. `.length(n)` or `.min(n).max(n)` when `n` is dynamic).
+Use `Output.object` with a Zod schema whose shape matches persisted cards: an array of `{ front, back }`. Constrain **count** in the prompt; for **Anthropic** structured output, array schemas may only use `minItems` **0 or 1** and **must not** use `maxItems`—use `z.array(...).min(1)` for the provider, then enforce max length and exact count in application code after generation.
 
 ```typescript
+import { anthropic } from "@ai-sdk/anthropic";
 import { generateText, Output } from "ai";
 import { z } from "zod";
 
@@ -33,7 +34,7 @@ const generatedFlashcardsSchema = z.object({
 });
 
 const { output } = await generateText({
-  model: "openai/gpt-5.3-chat",
+  model: anthropic("claude-haiku-4-5-20251001"),
   output: Output.object({
     schema: generatedFlashcardsSchema,
   }),

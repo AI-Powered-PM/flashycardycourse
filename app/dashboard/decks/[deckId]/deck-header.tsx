@@ -61,6 +61,9 @@ export function DeckHeader({ deck, cardCount, canUseAiGeneration }: DeckHeaderPr
     });
   }
 
+  const deckReadyForAi =
+    deck.title.trim().length > 0 && (deck.description?.trim() ?? "").length > 0;
+
   return (
     <>
       <div className="mb-8">
@@ -86,7 +89,11 @@ export function DeckHeader({ deck, cardCount, canUseAiGeneration }: DeckHeaderPr
           </div>
 
           <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-            <GenerateAiCardsButton deckId={deck.id} canUseAi={canUseAiGeneration} />
+            <GenerateAiCardsButton
+              deckId={deck.id}
+              canUseAi={canUseAiGeneration}
+              readyForAi={deckReadyForAi}
+            />
             {cardCount > 0 ? (
               <Button render={<Link href={`/decks/${deck.id}/study`} />} nativeButton={false} size="default" className="gap-2">
                 <BookOpen className="size-4" aria-hidden />
