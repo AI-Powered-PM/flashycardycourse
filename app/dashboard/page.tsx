@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { CreditCard } from "lucide-react";
 
 import { getDecksForUser } from "@/src/db/queries";
 
@@ -21,8 +22,8 @@ function formatUpdatedAt(value: Date) {
   });
 }
 
-function formatCardCount(cardCount: number) {
-  return `${cardCount} ${cardCount === 1 ? "card" : "cards"}`;
+function formatCardLabel(cardCount: number) {
+  return cardCount === 1 ? "card" : "cards";
 }
 
 export default async function DashboardPage() {
@@ -62,7 +63,16 @@ export default async function DashboardPage() {
                   </div>
                   <div className="mt-4 border-t border-border pt-3">
                     <p className="text-xs text-muted-foreground">
-                      {formatCardCount(deck.cardCount)} • Last updated: {formatUpdatedAt(deck.updatedAt)}
+                      <span className="inline-flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5">
+                          <CreditCard className="size-3.5" aria-hidden />
+                          <span>
+                            {deck.cardCount} {formatCardLabel(deck.cardCount)}
+                          </span>
+                        </span>
+                        <span aria-hidden>•</span>
+                        <span>Last updated: {formatUpdatedAt(deck.updatedAt)}</span>
+                      </span>
                     </p>
                   </div>
                 </Link>
