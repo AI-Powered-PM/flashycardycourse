@@ -1,14 +1,33 @@
 import { and, count, desc, eq } from "drizzle-orm";
 
 import { db } from "@/src/db";
-import { decksTable } from "@/src/db/schema";
+import { cardsTable, decksTable } from "@/src/db/schema";
 
 export async function getDecksForUser(userId: string) {
-  return db
-    .select()
+  const decks = await db
+    .select({
+      id: decksTable.id,
+      userId: decksTable.userId,
+      title: decksTable.title,
+      description: decksTable.description,
+      createdAt: decksTable.createdAt,
+      updatedAt: decksTable.updatedAt,
+      cardCount: count(cardsTable.id),
+    })
     .from(decksTable)
+    .leftJoin(cardsTable, eq(cardsTable.deckId, decksTable.id))
     .where(eq(decksTable.userId, userId))
+    .groupBy(
+      decksTable.id,
+      decksTable.userId,
+      decksTable.title,
+      decksTable.description,
+      decksTable.createdAt,
+      decksTable.updatedAt,
+    )
     .orderBy(desc(decksTable.updatedAt));
+
+  return decks.map((deck) => ({ ...deck, cardCount: Number(deck.cardCount) }));
 }
 
 export async function getDeckCountForUser(userId: string) {
