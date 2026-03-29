@@ -1,0 +1,54 @@
+# Data Layer: Server Components, Server Actions & Zod
+
+## Reads
+
+- **Database reads** (and other server-side data fetching for pages) must happen in **Server Components** (or in helpers they call). Do not fetch the same data from the client via API routes or client-side `fetch` to your own backend when a Server Component can load it.
+
+## Writes
+
+- **Inserts, updates, and deletes** against the database must run only inside **Server Actions** (`"use server"`), not from Client Components calling raw DB code, and not from ad-hoc client `fetch` to mutation endpoints unless those endpoints delegate to the same server-side pattern (prefer Server Actions).
+
+## Validation
+
+- Use **Zod** for all validation of data entering the server boundary (forms, action payloads, external input).
+- Every Server Action that accepts input must:
+  - Parse/validate with a **Zod schema** (e.g. `schema.parse()` or `schema.safeParse()`).
+  - Declare a **typed** argument (e.g. `input: CreateDeckInput`) derived from Zod (`z.infer<typeof schema>`), not an untyped blob.
+
+## Do Not Use `FormData` as the Action Type
+
+- **Do not** type Server Action parameters as `FormData` and branch on string keys. Build a typed object (from controlled fields or from `FormData` fields **inside** the action after `"use server"`), validate it with Zod, then use the inferred type.
+
+```typescript
+// BAD — FormData as the public contract, no Zod, inline db in the action
+"use server";
+export async function updateDeck(formData: FormData) {
+  const name = formData.get("name") as string;
+  await db.update(decksTable).set({ name });
+}
+
+// GOOD — typed payload + Zod, then call a query helper ("use server" at top of the module)
+"use server";
+
+import { auth } from "@clerk/nextjs/server";
+import { z } from "zod";
+
+import { updateDeckTitleForUser } from "@/src/db/queries";
+
+const updateDeckSchema = z.object({
+  deckId: z.number().int().positive(),
+  name: z.string().min(1).max(200),
+});
+
+export type UpdateDeckInput = z.infer<typeof updateDeckSchema>;
+
+export async function updateDeck(input: UpdateDeckInput) {
+  const parsed = updateDeckSchema.parse(input);
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  await updateDeckTitleForUser(userId, parsed.deckId, parsed.name);
+}
+```
+
+If the UI uses `<form action={...}>`, you may still forward `FormData` into a thin wrapper that immediately maps fields into a plain object and calls a typed, Zod-validated action — the **action's** signature stays a typed object, not `FormData`.

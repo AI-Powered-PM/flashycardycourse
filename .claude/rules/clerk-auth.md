@@ -1,0 +1,44 @@
+# Clerk Authentication & Data Isolation
+
+All authentication is handled by **Clerk**. Every data query must be scoped to the authenticated user so users can never access another user's data.
+
+## Rules
+
+- Use `auth()` from `@clerk/nextjs/server` in Server Components and Server Actions to get the current `userId`.
+- Use `useAuth()` or `useUser()` from `@clerk/nextjs` only in Client Components.
+- **Always** filter queries by `userId`. Never expose an endpoint or action that returns unscoped data.
+- For child resources (e.g. cards), join through the parent (deck) to verify ownership — do not trust a raw `deckId` from the client.
+- Call **`src/db/queries`** helpers with `userId` from `auth()` at the Server Component / Server Action boundary; implement the actual `db` + `userId` filters inside those helpers (see drizzle-database rule).
+
+## Examples
+
+```typescript
+// BAD — no ownership check
+export async function getDeck(deckId: number) {
+  return getDeckByIdUnscoped(deckId);
+}
+
+// GOOD — scoped to the authenticated user via query helpers
+import { auth } from "@clerk/nextjs/server";
+
+import { getDeckByIdForUser } from "@/src/db/queries";
+
+export async function loadDeckPage(deckId: number) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  return getDeckByIdForUser(userId, deckId);
+}
+```
+
+```typescript
+// BAD — trusts client-supplied deckId without ownership check
+export async function getCards(deckId: number) {
+  return selectCardsByDeckId(deckId);
+}
+
+// GOOD — verifies the deck belongs to the user first (inside queries)
+export async function getCardsForUserDeck(userId: string, deckId: number) {
+  return getCardsByDeckIdForUser(userId, deckId); // query helper checks deck ownership, then loads cards
+}
+```

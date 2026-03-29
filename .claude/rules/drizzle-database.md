@@ -1,0 +1,48 @@
+# Drizzle-only Database Access
+
+All database reads and writes must go through **Drizzle ORM** using this project's schema and the shared client. Do not bypass them with ad-hoc SQL drivers or alternate clients in application code.
+
+## Required Patterns
+
+- **Schema**: Define and export tables, columns, and relations in `src/db/schema.ts`. Keep `drizzle.config.ts` pointing at that file for migrations.
+- **Client**: The `db` instance from `src/db` is used only **inside** `src/db/**` (including query modules). Feature code does not import `db` or table objects for queries.
+- **Query modules**: Implement reads and writes as **named async functions** in `src/db/queries/` (group by domain, e.g. `decks.ts`, `cards.ts`). Re-export from `src/db/queries/index.ts` when helpful. Server Components, Server Actions, and route handlers import from `@/src/db/queries`, not from `@/src/db` / `schema.ts` for database work.
+- **Inside queries**: Use Drizzle's query builder (`db.select()`, `db.insert()`, `db.update()`, `db.delete()`, `db.query.*` with relations, etc.) and table/column objects from `schema.ts`.
+- **Migrations**: After schema changes, use Drizzle Kit (`drizzle-kit generate` / project scripts) so the `drizzle/` folder stays the source of truth for SQL migrations.
+
+## Examples
+
+```typescript
+// BAD — raw SQL or a second DB client in app code
+import { neon } from "@neondatabase/serverless";
+const sql = neon(process.env.DATABASE_URL!);
+await sql`SELECT * FROM decks`;
+
+// BAD — Drizzle in app/ or actions instead of query helpers
+import { db } from "@/src/db";
+import { decksTable } from "@/src/db/schema";
+await db.select().from(decksTable).where(eq(decksTable.userId, userId));
+
+// GOOD — feature code calls query helpers
+import { getDecksForUser } from "@/src/db/queries";
+
+const decks = await getDecksForUser(userId);
+```
+
+```typescript
+// GOOD — query implementation lives under src/db/queries
+import { db } from "@/src/db";
+import { decksTable } from "@/src/db/schema";
+import { eq } from "drizzle-orm";
+
+export async function getDecksForUser(userId: string) {
+  return db.select().from(decksTable).where(eq(decksTable.userId, userId));
+}
+```
+
+This repo maps `@/*` to the project root (`tsconfig.json`), so prefer `@/src/db/queries` in app code and `@/src/db` + `@/src/db/schema` only inside `src/db/queries/**`.
+
+## Exceptions
+
+- The low-level Neon client may exist only inside `src/db` (or similar) to construct the Drizzle client — do not duplicate that wiring elsewhere for feature queries.
+- **Maintenance scripts** under `scripts/` (seed, one-off migrations) may use `db` and schema tables directly when query helpers are not appropriate.
