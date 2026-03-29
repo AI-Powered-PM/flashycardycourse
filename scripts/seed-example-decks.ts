@@ -1,5 +1,7 @@
-import { db } from "../src/db";
-import { cardsTable, decksTable } from "../src/db/schema";
+import {
+  createCardsBulkForUserDeck,
+  createDeckForUser,
+} from "../src/db/queries";
 
 const USER_ID = "user_3BXRoKSpx2i0STrxQx0sm0Ldjn0";
 
@@ -86,43 +88,19 @@ const BRITISH_HISTORY_CARDS: { front: string; back: string }[] = [
 ];
 
 async function main() {
-  const [spanishDeck] = await db
-    .insert(decksTable)
-    .values({
-      userId: USER_ID,
-      title: "English → Spanish vocabulary",
-      description: "Common English words and phrases with Spanish translations.",
-    })
-    .returning();
+  const spanishDeck = await createDeckForUser(USER_ID, {
+    title: "English → Spanish vocabulary",
+    description: "Common English words and phrases with Spanish translations.",
+  });
 
-  if (!spanishDeck) throw new Error("Failed to insert Spanish deck");
+  await createCardsBulkForUserDeck(USER_ID, spanishDeck.id, SPANISH_CARDS);
 
-  await db.insert(cardsTable).values(
-    SPANISH_CARDS.map((c) => ({
-      deckId: spanishDeck.id,
-      front: c.front,
-      back: c.back,
-    })),
-  );
+  const historyDeck = await createDeckForUser(USER_ID, {
+    title: "British history Q&A",
+    description: "Key people, dates, and events from British history.",
+  });
 
-  const [historyDeck] = await db
-    .insert(decksTable)
-    .values({
-      userId: USER_ID,
-      title: "British history Q&A",
-      description: "Key people, dates, and events from British history.",
-    })
-    .returning();
-
-  if (!historyDeck) throw new Error("Failed to insert history deck");
-
-  await db.insert(cardsTable).values(
-    BRITISH_HISTORY_CARDS.map((c) => ({
-      deckId: historyDeck.id,
-      front: c.front,
-      back: c.back,
-    })),
-  );
+  await createCardsBulkForUserDeck(USER_ID, historyDeck.id, BRITISH_HISTORY_CARDS);
 
   console.log(
     `Inserted decks ${spanishDeck.id} (Spanish, ${SPANISH_CARDS.length} cards) and ${historyDeck.id} (British history, ${BRITISH_HISTORY_CARDS.length} cards) for user ${USER_ID}`,

@@ -6,6 +6,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { getCardsForUserDeck, getDeckByIdForUser } from "@/src/db/queries";
+import { parseDeckIdRouteParam } from "@/src/lib/deck-id-route-param";
 
 import { FlashcardStudy } from "./flashcard-study";
 
@@ -15,8 +16,8 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { deckId } = await params;
-  const id = Number.parseInt(deckId, 10);
-  if (!Number.isFinite(id) || id <= 0) {
+  const id = parseDeckIdRouteParam(deckId);
+  if (id === null) {
     return { title: "Study | FlashyCardy" };
   }
 
@@ -34,8 +35,8 @@ export default async function DeckStudyPage({ params }: Props) {
   if (!userId) redirect("/");
 
   const { deckId } = await params;
-  const id = Number.parseInt(deckId, 10);
-  if (!Number.isFinite(id) || id <= 0) notFound();
+  const id = parseDeckIdRouteParam(deckId);
+  if (id === null) notFound();
 
   const deck = await getDeckByIdForUser(userId, id);
   if (!deck) notFound();

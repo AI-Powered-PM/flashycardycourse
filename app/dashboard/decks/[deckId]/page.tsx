@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
 import { getCardsForUserDeck, getDeckByIdForUser } from "@/src/db/queries";
+import { parseDeckIdRouteParam } from "@/src/lib/deck-id-route-param";
 
 import { CardList } from "./card-list";
 import { DeckHeader } from "./deck-header";
@@ -13,8 +14,8 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { deckId } = await params;
-  const id = Number.parseInt(deckId, 10);
-  if (!Number.isFinite(id) || id <= 0) {
+  const id = parseDeckIdRouteParam(deckId);
+  if (id === null) {
     return { title: "Deck | FlashyCardy" };
   }
 
@@ -38,8 +39,8 @@ export default async function DeckPage({ params }: Props) {
     has({ feature: "ai_flashcard_generation" }) || has({ plan: "pro" });
 
   const { deckId } = await params;
-  const id = Number.parseInt(deckId, 10);
-  if (!Number.isFinite(id) || id <= 0) notFound();
+  const id = parseDeckIdRouteParam(deckId);
+  if (id === null) notFound();
 
   const deck = await getDeckByIdForUser(userId, id);
   if (!deck) notFound();
